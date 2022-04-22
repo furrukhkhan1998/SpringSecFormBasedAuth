@@ -11,8 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
-import javax.swing.text.html.Option;
 import java.util.Optional;
 
 @Component
@@ -40,7 +38,11 @@ public class AuthProvider implements AuthenticationProvider {
             attempts.setAttempts(0);
             attemptsRepository.save(attempts);
         }
+        String password = (String) authentication.getCredentials();
+        System.out.println("The received password is " + password);
+
         return authentication;
+
     }
 
     private void processFailedAttempts(String username, User user){
