@@ -46,7 +46,6 @@ public class AuthProvider implements AuthenticationProvider {
         }
 
         if (userObject == null){
-            System.out.println("i am in null object");
             return authentication;
         }
         else{
@@ -56,7 +55,6 @@ public class AuthProvider implements AuthenticationProvider {
                     attempts.setAttempts(0);
                     attemptsRepository.save(attempts);
                 }
-                System.out.println("I am in password match block");
                 return new UsernamePasswordAuthenticationToken(authentication.getName(), authentication.getCredentials(),authentication.getAuthorities());
             }
             else
