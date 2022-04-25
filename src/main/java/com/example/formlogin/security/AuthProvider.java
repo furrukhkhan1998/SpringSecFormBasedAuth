@@ -6,11 +6,15 @@ import com.example.formlogin.repository.AttemptsRepository;
 import com.example.formlogin.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import javax.security.auth.login.AccountLockedException;
 import java.util.Optional;
 
 @Component
@@ -33,15 +37,34 @@ public class AuthProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
         Optional<Attempts> userAttempts = attemptsRepository.findAttemptsByUsername(username);
-        if(userAttempts.isPresent()){
-            Attempts attempts = userAttempts.get();
-            attempts.setAttempts(0);
-            attemptsRepository.save(attempts);
-        }
         String password = (String) authentication.getCredentials();
-        System.out.println("The received password is " + password);
+        Optional<User> userList = userRepository.findUserByUsername(username);
+        User userObject = userList.get();
 
-        return authentication;
+        if(userObject.getAccountNonLocked() == false){
+            throw new LockedException("Account Locked!");
+        }
+
+        if (userObject == null){
+            System.out.println("i am in null object");
+            return authentication;
+        }
+        else{
+            if(userObject.getPassword().equals(password)){
+                if(userAttempts.isPresent()){
+                    Attempts attempts = userAttempts.get();
+                    attempts.setAttempts(0);
+                    attemptsRepository.save(attempts);
+                }
+                System.out.println("I am in password match block");
+                return new UsernamePasswordAuthenticationToken(authentication.getName(), authentication.getCredentials(),authentication.getAuthorities());
+            }
+            else
+            {
+                processFailedAttempts(username, userObject);
+                throw new BadCredentialsException("Username/Password does not match!");
+            }
+        }
 
     }
 
@@ -69,6 +92,7 @@ public class AuthProvider implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return false;
+
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
